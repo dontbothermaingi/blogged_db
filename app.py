@@ -45,9 +45,6 @@ class StoryResource(Resource):
         data = request.form
         file = request.files.get('photo')
 
-        filename = secure_filename(file.filename)
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-
         if not data:
             return jsonify({'error': 'No data available for posting'}), 400
         
@@ -56,38 +53,44 @@ class StoryResource(Resource):
             if field not in data:
                 return jsonify({'error': f'Missing required field: {field}'}), 400
             
-            title = data.get('title')
-            author = data.get('author')
+        title = data.get('title')
+        author = data.get('author')
 
-            # Convert date string to Python date object
-            date_str = data.get('date')
-            date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        # Convert date string to Python date object
+        date_str = data.get('date')
+        date = datetime.strptime(date_str, '%Y-%m-%d').date()
 
-            category = data.get('category')
+        category = data.get('category')
 
-            new_story = Story (
-                title=title,
-                author=author,
-                date=date,
-                category=category
-            )
+        if file:
+            filename = secure_filename(file.filename)
+            photo_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(photo_path)
 
-            paragraphs = json.loads(data.get('paragraphs', "[]"))
+        new_story = Story (
+            title=title,
+            author=author,
+            date=date,
+            category=category,
+            photo=file,
+        )
 
-            for paragraph in paragraphs:
-                if 'paragraph' not in paragraph:
-                    return jsonify({'error': 'Missing required field: paragraph'}), 400
+        paragraphs = json.loads(data.get('paragraphs', "[]"))
+
+        for paragraph in paragraphs:
+            if 'paragraph' not in paragraph:
+                return jsonify({'error': 'Missing required field: paragraph'}), 400
             
-            new_paragraph = Paragraph(paragraph=paragraph['paragraph'])
-            new_story.paragraphs.append(new_paragraph)
+        new_paragraph = Paragraph(paragraph=paragraph['paragraph'])
+        new_story.paragraphs.append(new_paragraph)
 
-            try:
-                db.session.add(new_story)
-                db.session.commit()
-                return jsonify(new_story.to_dict()), 200
-            except Exception as e:
-                db.session.rollback()
-                return jsonify({'error': f'Failed to create story: {str(e)}'}), 500
+        try:
+            db.session.add(new_story)
+            db.session.commit()
+            return jsonify(new_story.to_dict()), 200
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': f'Failed to create story: {str(e)}'}), 500
             
 api.add_resource(StoryResource, '/stories')
 
@@ -110,8 +113,10 @@ def get_story_by_id(id):
         data = request.form.to_dict()
 
         file = request.files.get('photo')
+
         filename = secure_filename(file.filename)
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        photo_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(photo_path)
 
         if 'photo' in data:
             try:
