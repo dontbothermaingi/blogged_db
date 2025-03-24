@@ -62,6 +62,7 @@ class StoryResource(Resource):
 
         category = data.get('category')
 
+        photo_path = None
         if file:
             filename = secure_filename(file.filename)
             photo_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
@@ -72,7 +73,7 @@ class StoryResource(Resource):
             author=author,
             date=date,
             category=category,
-            photo=file,
+            photo=filename,
         )
 
         paragraphs = json.loads(data.get('paragraphs', "[]"))
@@ -81,13 +82,13 @@ class StoryResource(Resource):
             if 'paragraph' not in paragraph:
                 return jsonify({'error': 'Missing required field: paragraph'}), 400
             
-        new_paragraph = Paragraph(paragraph=paragraph['paragraph'])
-        new_story.paragraphs.append(new_paragraph)
+            new_paragraph = Paragraph(paragraph=paragraph['paragraph'])
+            new_story.paragraphs.append(new_paragraph)
 
         try:
             db.session.add(new_story)
             db.session.commit()
-            return jsonify(new_story.to_dict()), 200
+            return new_story.to_dict(), 200
         except Exception as e:
             db.session.rollback()
             return jsonify({'error': f'Failed to create story: {str(e)}'}), 500
