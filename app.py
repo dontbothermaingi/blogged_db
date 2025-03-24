@@ -78,7 +78,7 @@ class StoryResource(Resource):
                 if 'paragraph' not in paragraph:
                     return jsonify({'error': 'Missing required field: paragraph'}), 400
             
-            new_paragraph = Paragraph(description=paragraph['paragraph'])
+            new_paragraph = Paragraph(paragraph=paragraph['paragraph'])
             new_story.paragraphs.append(new_paragraph)
 
             try:
@@ -87,7 +87,7 @@ class StoryResource(Resource):
                 return jsonify(new_story.to_dict()), 200
             except Exception as e:
                 db.session.rollback()
-                return jsonify({'error': f'Failed to create product: {str(e)}'}), 500
+                return jsonify({'error': f'Failed to create story: {str(e)}'}), 500
             
 api.add_resource(StoryResource, '/stories')
 
@@ -108,7 +108,7 @@ def get_story_by_id(id):
     if request.method == 'PATCH':
 
         data = request.form.to_dict()
-        
+
         file = request.files.get('photo')
         filename = secure_filename(file.filename)
         file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
@@ -136,7 +136,7 @@ def get_story_by_id(id):
             if 'paragraph' not in paragraph:
                 return jsonify({'error': 'Missing required field: paragraph'}), 400
             
-        new_paragraph = Paragraph(description=paragraph['paragraph'])
+        new_paragraph = Paragraph(paragraph=paragraph['paragraph'])
         story.paragraphs.append(new_paragraph)
 
         for key, value in data.items():
